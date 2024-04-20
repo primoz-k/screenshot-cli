@@ -2,6 +2,7 @@ import subprocess
 import os
 import typer
 from datetime import datetime
+import glob
 
 
 app = typer.Typer()
@@ -53,6 +54,7 @@ class ShotScraper:
             process.wait()
 
     def upload_to_storage(self, remote_server: str = None, remote_path: str = None):
+        print(f"Uploading to storage: {self.host_name}")
         local_path = f"hosts/{self.host_name}/"
         remote_server = remote_server if remote_server else "storage"
         remote_path_server = remote_path if remote_path else f"storage/web-apps/hosts/{self.host_name}/"
@@ -71,13 +73,21 @@ class ShotScraper:
             print("Upload failed.")
 
 
-
 @app.command()
 def main(host: str, urls_file: str, output_dir_png: str = None, output_dir_html: str = None):
     shot_scraper = ShotScraper(host, urls_file, output_dir_png, output_dir_html)
     shot_scraper.create_screenshots()
     shot_scraper.save_htmls()
     shot_scraper.upload_to_storage()
+
+@app.command()
+def all(output_dir_png: str = None, output_dir_html: str = None):
+    for file_path in glob.glob('hosts/urls/*.txt', recursive=False):
+        host = file_path.replace('.txt', '').replace('hosts/urls/', '')
+        shot_scraper = ShotScraper(host, file_path, output_dir_png, output_dir_html)
+        shot_scraper.create_screenshots()
+        shot_scraper.save_htmls()
+        shot_scraper.upload_to_storage()
 
 @app.command()
 def create_screenshots(host: str, urls_file: str, output_dir_png: str = None, output_dir_html: str = None):
